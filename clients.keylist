@@ -1,0 +1,7 @@
+# ALASTOR Massively Concurrent File Transfer System
+# This file contains the trusted client API keys, one on each line.
+# Key length are not limited. 3 examples are provided below
+
+key1
+clientKey2020
+p0b3127n640p98wy34pt98qyv3aotviaeyrtbduyrtngdvfhnxloi7vg5
