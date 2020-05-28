@@ -85,6 +85,7 @@ public class FileHandler implements Closeable {
     }
     fileChannel.close();
     raFile.close();
+    System.out.println("Closing unused file: " + file.getAbsolutePath());
 
   }
 
@@ -96,9 +97,10 @@ public class FileHandler implements Closeable {
    * @return bytes that has been read
    * @throws IOException
    */
-  public byte[] readOffset(int offset, int length) throws IOException {
-    byte[] retval = null;
-    raFile.readFully(retval, offset, length);
+  public synchronized byte[] readOffset(long offset, int length) throws IOException {
+    byte[] retval = new byte[length];
+    raFile.seek(offset);
+    raFile.readFully(retval, 0, length);
     return retval;
   }
 
@@ -108,7 +110,7 @@ public class FileHandler implements Closeable {
    * @return A line that has been read, without EOL characters
    * @throws IOException
    */
-  public String readLine() throws IOException {
+  public synchronized String readLine() throws IOException {
     return raFile.readLine();
   }
   
@@ -119,11 +121,12 @@ public class FileHandler implements Closeable {
    * @param data data to be written
    * @throws IOException
    */
-  public void writeOffset(int offset, byte[] data) throws IOException {
+  public synchronized void writeOffset(long offset, byte[] data) throws IOException {
     if (readOnly) {
       throw new IOException("File is read only");
     }
-    raFile.write(data, offset, data.length);
+    raFile.seek(offset);
+    raFile.write(data);
   }
 
 }

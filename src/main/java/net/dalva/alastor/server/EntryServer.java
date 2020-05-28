@@ -60,7 +60,7 @@ public class EntryServer implements Callable<Integer> {
             "@|fg(208) Welcome to our world; The World of Pandemonium, The Garden of Battle, my Flame Haze.|@"
             + "@|fg(243)  - Alastor (1E15-22:44)|@"));
     System.out.println("");
-    
+
     blockUntilShutdown();
 
     return 0;

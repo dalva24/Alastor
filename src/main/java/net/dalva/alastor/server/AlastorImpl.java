@@ -22,6 +22,7 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.dalva.alastor.Tools;
 import net.dalva.alastor.grpc.AlastorGrpc;
 import net.dalva.alastor.grpc.DataQuery;
 import net.dalva.alastor.grpc.FileData;
@@ -76,7 +77,7 @@ public class AlastorImpl extends AlastorGrpc.AlastorImplBase {
 
   /**
    * Get File Data
-   * TODO Implement this
+   * Implemented.
    * @param request
    * @param responseObserver 
    */
@@ -95,19 +96,32 @@ public class AlastorImpl extends AlastorGrpc.AlastorImplBase {
       return;
     }
     
-
-    ErrorMsg errVal = ErrorMsg.newBuilder()
-            .setCode(1)
-            .setMsg("not implemented")
-            .build();
-    FileData reply = FileData.newBuilder()
+    ErrorMsg errVal = ErrorMsg.newBuilder().setCode(0).build();
+    try {
+      ServerFileHandler fh = ServerFileHandler.get(request.getRequestedFilename(), true);
+      //System.out.println("getting file " + request.getRequestedFilename() + " chunk offset " + request.getChunkOffset() + " length " + request.getChunkSize() + " bytes");
+      byte[] data = fh.readOffsetChunk(request.getChunkOffset(), request.getChunkSize());
+      long crc32 = Tools.makeCRC32(data);
+      FileData reply = FileData.newBuilder()
             .setError(errVal)
-            .setFileName("nullfname")
-            .setChunkData(ByteString.EMPTY)
-            .setChunkCrc32(0)
+            .setFileName(fh.getFileName())
+            .setChunkData(ByteString.copyFrom(data))
+            .setChunkCrc32(crc32)
             .build();
     responseObserver.onNext(reply);
     responseObserver.onCompleted();
+    return;
+    } catch (IOException ex) {
+      Logger.getLogger(AlastorImpl.class.getName()).log(Level.SEVERE, null, ex);
+      errVal = ErrorMsg.newBuilder()
+            .setCode(10)
+            .setMsg(ex.getLocalizedMessage())
+            .build();
+      responseObserver.onNext(FileData.newBuilder().setError(errVal).build());
+      responseObserver.onCompleted();
+      return;
+    }
+    
   }
 
 }

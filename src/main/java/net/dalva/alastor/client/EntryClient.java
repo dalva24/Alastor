@@ -18,7 +18,6 @@
 package net.dalva.alastor.client;
 
 import java.util.concurrent.Callable;
-import lombok.Data;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
@@ -28,9 +27,8 @@ import picocli.CommandLine.Parameters;
  * Landing for CLI "get" command
  * @author Dalva
  */
-@Data
 @CommandLine.Command(name = "get",
-        description = "Download a file from Alastor server")
+        description = {"Download a file from Alastor server", "@|bold,red,underline WARNING: Will always overwrite existing local file.|@"})
 public class EntryClient implements Callable<Integer> {
 
   @Option(names = {"-n", "--notls"}, description = "Don't use TLS (TLS used by default)")
@@ -39,8 +37,8 @@ public class EntryClient implements Callable<Integer> {
   @Option(names = {"-c", "--connections"}, description = "Number of connections used (default 50)")
   private int conns = 50;
 
-  @Option(names = {"-k", "--chunksize"}, description = "Chunk Size in kB (default 50kB)")
-  private int chunkSizeInKB = 50;
+  @Option(names = {"-k", "--chunksize"}, description = "Chunk Size in kB (default 100kB)")
+  private int chunkSizeInKB = 100;
 
   @Parameters(index = "0", description = {"example.com, 10.8.0.1:5555, 127.0.0.1:41457, ...", "Port 443 by default, or 80 when -n is set"})
   private String address;
@@ -54,18 +52,43 @@ public class EntryClient implements Callable<Integer> {
   @Override
   public Integer call() throws Exception {
     System.out.println("ALASTOR CLIENT"); //todo version info
-    System.out.println("Will be using " + conns + " parallel connections with " + chunkSizeInKB + "kB chunk size");
-    System.out.print("Connecting to " + address);
+    System.out.println("Connecting to : " + address);
+    System.out.println("Connections   : " + conns);
+    System.out.println("Chunk Size    : " + chunkSizeInKB);
     if (notls) {
-      System.out.println(" without TLS");
-      System.out.println(Ansi.AUTO.string("@|bold,red,underline WARNING: TLS DISABLED|@"));
+      System.out.print("TLS           : ");
+      System.out.println(Ansi.AUTO.string("@|bold,red,underline DISABLED|@"));
     } else {
-      System.out.println(" using TLS");
+      System.out.println("TLS           : Enabled");
     }
     
     FlameWeaver.weave(this);
 
     return 0;
+  }
+  
+  public int getChunkSizeInBytes() {
+    return chunkSizeInKB*1024;
+  }
+
+  String getFilename() {
+    return filename;
+  }
+
+  int getConns() {
+    return conns;
+  }
+
+  boolean isNotls() {
+    return notls;
+  }
+
+  String getAddress() {
+    return address;
+  }
+
+  String getClientKey() {
+    return clientKey;
   }
 
   

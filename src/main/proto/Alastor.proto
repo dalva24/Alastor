@@ -56,7 +56,7 @@ message DataQuery {
   string api_key = 1; // Arbitrary length API key for client authentication
   string requested_filename = 2; // Filename of the requested file
   int32 chunk_size = 3; // Client's chunk size setting in Bytes
-  int32 chunk_offset = 4; // Requested chunk offset from 0
+  int64 chunk_offset = 4; // Requested chunk offset from 0 in Bytes
 }
 
 /**

@@ -3,7 +3,7 @@
 
 A file transfer server and client that transfers file supporting hundreds of simultaneous connection. Made in Java utilizing gRPC.
 
-A quick weekend project of mine, so don't expect it to be very optimized.
+This is just a quick weekend project of mine, so the code may not be as refined. Expect horrible memory usage and system resource inefficiencies all around.
 
 ## Overview
 
@@ -16,6 +16,12 @@ Each chunk that are received are then validated with its CRC32 checksum to ensur
 Simple security and client validation is provided by using a pre-shared API key that are to be provided on each client request, which require TLS for effective usage. TLS can be provided externally using NGINX (or other web server) reverse proxy and an HTTPS site configuration with proper certificates (Lets Encrypt, etc.)
 
 :warning: Be warned, that using Alastor with hundreds or thousands of connections may possibly trigger your network, or your ISP's, firewall response. It will also slow down your system considerably, and eat up memory like no tomorrow. The author of Alastor is not responsible for any damages or lossess caused by the usage of this software.
+
+## Limitation
+
+- File sizes above 4GB should work, but untested. I might forgot to use int64 instead of int32 in some places.
+- Use without TLS-enabled reverse proxy works, but are not recommended as everything is sent unencrypted, including the client key.
+
 
 ## Motivation
 
@@ -84,8 +90,8 @@ Usage help will then be shown.
 
 TODO
 
-## Future plans
+## Future plans / TODOs
 There are some additional ideas that came to mind, although priority to implement them is relatively low, such as:
 - Download pause and resuming capability, by saving downloaded chunk information as a metadata file besides the downloaded file
 - Data encryption and client authentication without the need of TLS / HTTPS Webserver
-- 
+- Server file auto-close when inactive (ServerFileHandler.java:60)
