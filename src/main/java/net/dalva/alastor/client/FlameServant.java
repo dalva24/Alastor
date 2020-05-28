@@ -19,6 +19,8 @@ package net.dalva.alastor.client;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -53,7 +55,7 @@ public class FlameServant extends Thread {
       while (true) { // download loop until success
         try {
           data = FlameWeaver.dataQuery(blockingStub, nextChunk.getOffset());
-          if (data.getError().getCode()==0) {
+          if (data.getError().getCode() == 0) {
             if (FlameWeaver.validateData(data)) {
               break;
             } else {
@@ -61,6 +63,10 @@ public class FlameServant extends Thread {
             }
           } else {
             System.err.println("Error: chunk " + nextChunk.getOffset() + " error " + data.getError().getCode() + " ; retrying...");
+          }
+        } catch (StatusRuntimeException x) {
+          if (x.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
+            System.err.println("Timeout: chunk " + nextChunk.getOffset() + " retrying... ");
           }
         } catch (Exception ex) {
           System.err.println("Download error: chunk " + nextChunk.getOffset() + " retrying...");

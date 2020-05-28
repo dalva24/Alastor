@@ -19,11 +19,11 @@ package net.dalva.alastor.client;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -131,7 +131,7 @@ public class FlameWeaver {
     }
     
     System.out.println("");
-    System.out.println("@|fg(39) Download successful. |@");
+    System.out.println(CommandLine.Help.Ansi.AUTO.string("@|fg(39) Download successful. |@"));
     System.out.println("");
 
   }
@@ -259,10 +259,12 @@ public class FlameWeaver {
             .build();
     FileData response;
     try {
-      response = stub.getFileData(request);
+      response = stub.withDeadlineAfter(15, TimeUnit.SECONDS).getFileData(request);
       return response;
     } catch (StatusRuntimeException e) {
-      System.err.printf("RPC failed: %s", e.getStatus());
+      if (e.getStatus().getCode() != Code.DEADLINE_EXCEEDED) {
+        System.err.printf("RPC failed: %s", e.getStatus());
+      }
       throw e;
     }
   }

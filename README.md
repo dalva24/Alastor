@@ -74,6 +74,21 @@ java -jar <jar name>.jar serve
 ```
 Usage help will then be shown. You can use tmux for a simple server damonization
 
+Nginx reverse proxy can be setup by referring to the following example:
+```
+http {
+    server {
+        listen 80 http2;
+
+        location / {
+            grpc_pass grpc://localhost:41457;
+        }
+    }
+}
+```
+Source: https://www.nginx.com/blog/nginx-1-13-10-grpc/
+Note that by default, Alastor Server runs at port 41457
+
 ### Client
 
 Requirements:
@@ -88,9 +103,13 @@ Usage help will then be shown.
 
 ## Deploying as Daemon 
 
-TODO
+TODO - file auto-close on server still needs to be implemented. currently it is bugged.
 
 ## Future plans / TODOs
+High priority implementation list:
+- When connection servants no longer have available chunks to download, simultaneously download the same final chunks and only use the fastest responding ones.
+  this is to improve the final download speeds, which usually slows down considerably.
+- Set adjustable timeout - or Set dynamic timeout based on remaining active connections?
 There are some additional ideas that came to mind, although priority to implement them is relatively low, such as:
 - Download pause and resuming capability, by saving downloaded chunk information as a metadata file besides the downloaded file
 - Data encryption and client authentication without the need of TLS / HTTPS Webserver

@@ -57,7 +57,7 @@ public class EntryClient implements Callable<Integer> {
     System.out.println("Chunk Size    : " + chunkSizeInKB);
     if (notls) {
       System.out.print("TLS           : ");
-      System.out.println(Ansi.AUTO.string("@|bold,red,underline DISABLED|@"));
+      System.out.println(Ansi.AUTO.string("@|bold,red,underline DISABLED |@"));
     } else {
       System.out.println("TLS           : Enabled");
     }
