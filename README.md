@@ -42,6 +42,14 @@ Thus the Alastor was born.
 To the ISPs:
 > "***However, I do not approve of this selfish wish as it currently stands***" - *Alastor (3E21-00:54)*
 
+## Performance
+
+A test is performed by downloading an example file from a private server to local computer on my home connection which supposedly have 4MBps hard bandwidth cap.
+
+Without Alastor, file served via standard HTTPS download via a web browser have an average of 30kB/s download speed.
+
+Using Alastor via TLS by NGINX reverse proxy, with 200 parallel connection and 100kB chunk size, full bandwidth saturation is achieved with an average download speed of 4000kB/s. However, when the active connection drops at the end of the download session due to the threads not having any more chunks to process, the download speed also falls drastically. A possible solution to this problem is to download the same final few chunks in parallel utilizing the entire requested active connection amount (in this example 200), only saving the data from the fastest returning connection thread.
+
 ## Building
 
 Requirements:
@@ -106,10 +114,13 @@ Usage help will then be shown.
 TODO - file auto-close on server still needs to be implemented. currently it is bugged.
 
 ## Future plans / TODOs
-High priority implementation list:
+TODOs:
 - When connection servants no longer have available chunks to download, simultaneously download the same final chunks and only use the fastest responding ones.
   this is to improve the final download speeds, which usually slows down considerably.
 - Set adjustable timeout - or Set dynamic timeout based on remaining active connections?
+- Chunk timeout message newline
+- Show finished size instead of just the number of finished chunks when downloading
+
 There are some additional ideas that came to mind, although priority to implement them is relatively low, such as:
 - Download pause and resuming capability, by saving downloaded chunk information as a metadata file besides the downloaded file
 - Data encryption and client authentication without the need of TLS / HTTPS Webserver
