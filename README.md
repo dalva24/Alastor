@@ -5,7 +5,7 @@
   <img width="880" height="400" src="client-ss.png">
 </p>
 
-A file transfer server and client that transfers file supporting hundreds of simultaneous connection. Made in Java utilizing gRPC.
+A file transfer server and client that supports hundreds of simultaneous connection, with extremely resilient connection management and retrying. Perfect for some of the world's worst internet connections. Made in Java utilizing gRPC.
 
 This is just a quick weekend project of mine, so the code may not be as refined. Expect horrible memory usage and system resource inefficiencies all around.
 
@@ -21,11 +21,14 @@ Simple security and client validation is provided by using a pre-shared API key 
 
 :warning: Be warned, that using Alastor with hundreds or thousands of connections may possibly trigger your network, or your ISP's, firewall response. It will also slow down your system considerably, and eat up memory like no tomorrow. The author of Alastor is not responsible for any damages or lossess caused by the usage of this software.
 
-## Limitation
+## Features
 
-- File sizes above 4GB should work, but untested. I might forgot to use int64 instead of int32 in some places.
-- Use without TLS-enabled reverse proxy works, but are not recommended as everything is sent unencrypted, including the client key.
-
+- Download single files with as much connections as you want. The connection amount is not limited, but are only tested with up to 200 parallel connections.
+- Extremely resilient connection tracking with automatic unlimited retries on every single chunk on errors or timeouts. Perfect for some of the worst internet connections in the world.
+- Supports file sizes above 4GB (tested with a 5GB file), with a supposed theoretical limit of 2^64 Bytes (obviously untested).
+- Supports connecting to TLS-enabled server, such as when ran behind NGINX TLS-enabled reverse proxy.
+- Unencrypted connections also supported with `-n` flag, but as its nature, insecure.
+- Downloaded chunks are also individually CRC32-checked to ensure integrity (with whole-file on-the-fly checksum checking planned)
 
 ## Motivation
 
@@ -96,12 +99,14 @@ http {
 
         location / {
             grpc_pass grpc://localhost:41457;
+			access_log off;
         }
     }
 }
 ```
 Source: https://www.nginx.com/blog/nginx-1-13-10-grpc/
 Note that by default, Alastor Server runs at port 41457
+Note that `access_log off;` is important, as otherwise nginx logs will be bombarded by the tens of thousands of connections that will be made during a download
 
 ### Client
 
@@ -124,7 +129,7 @@ TODOs:
 - When connection servants no longer have available chunks to download, simultaneously download the same final chunks and only use the fastest responding ones.
   this is to improve the final download speeds, which usually slows down considerably.
 - Set adjustable timeout - or Set dynamic timeout based on remaining active connections?
-- Chunk timeout message newline
+- Whole-file on-the-fly checksum testing that will not add additional drive reads
 
 There are some additional ideas that came to mind, although priority to implement them is relatively low, such as:
 - Download pause and resuming capability, by saving downloaded chunk information as a metadata file besides the downloaded file
