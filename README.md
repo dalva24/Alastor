@@ -1,6 +1,10 @@
 
 # ![Alastor-logo](Alastor.png?raw=true)  Alastor - Massively Concurrent File Transfer System
 
+<p align="center">
+  <img width="880" height="400" src="client-ss.png">
+</p>
+
 A file transfer server and client that transfers file supporting hundreds of simultaneous connection. Made in Java utilizing gRPC.
 
 This is just a quick weekend project of mine, so the code may not be as refined. Expect horrible memory usage and system resource inefficiencies all around.
