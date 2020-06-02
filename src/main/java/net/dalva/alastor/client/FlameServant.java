@@ -23,10 +23,9 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.dalva.alastor.grpc.AlastorGrpc;
 import net.dalva.alastor.grpc.FileData;
+import picocli.CommandLine;
 
 /**
  * This class is responsible for individual connection. To be used in a thread pool.
@@ -37,6 +36,32 @@ public class FlameServant extends Thread {
 
   private final ManagedChannel channel;
   private final AlastorGrpc.AlastorBlockingStub blockingStub;
+  
+  private long monitorProcessedChunk = 0;
+  private long monitorLastCheckedChunk = 0;
+  private int monitorLoadingIndicator = 0;
+  private boolean monitorThereWasAnError = false;
+  private boolean finished = false;
+  
+  public String getLoadingIndicator() {
+    if (monitorThereWasAnError) {
+      monitorThereWasAnError = false;
+      return CommandLine.Help.Ansi.AUTO.string("@|red #|@");
+    } else if (finished) {
+      return CommandLine.Help.Ansi.AUTO.string("@|cyan O|@");
+    }
+    if (monitorProcessedChunk != monitorLastCheckedChunk) {
+      monitorLoadingIndicator = (monitorLoadingIndicator+1)%4;
+      monitorLastCheckedChunk = monitorProcessedChunk;
+    }
+    switch (monitorLoadingIndicator) {
+      case 0: return "|";
+      case 1: return "/";
+      case 2: return "-";
+      case 3: return "\\";
+      default: return "?";
+    }
+  }
 
   @Override
   public void run() {
@@ -59,17 +84,21 @@ public class FlameServant extends Thread {
             if (FlameWeaver.validateData(data)) {
               break;
             } else {
-              System.err.println("CRC32 Error: chunk " + nextChunk.getOffset() + " retrying...");
+              InfoPrinter.printErrThreadSafe("CRC32 Error: chunk " + nextChunk.getOffset() + " retrying...");
+              monitorThereWasAnError = true;
             }
           } else {
-            System.err.println("Error: chunk " + nextChunk.getOffset() + " error " + data.getError().getCode() + " ; retrying...");
+            InfoPrinter.printErrThreadSafe("Error: chunk " + nextChunk.getOffset() + " error " + data.getError().getCode() + " ; retrying...");
+            monitorThereWasAnError = true;
           }
         } catch (StatusRuntimeException x) {
           if (x.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
-            System.err.println("Timeout: chunk " + nextChunk.getOffset() + " retrying... ");
+            //no need to print out timeout errors.
+            monitorThereWasAnError = true;
           }
         } catch (Exception ex) {
-          System.err.println("Download error: chunk " + nextChunk.getOffset() + " retrying...");
+          InfoPrinter.printErrThreadSafe("Download error: chunk " + nextChunk.getOffset() + " retrying...");
+          monitorThereWasAnError = true;
         }
       }
       nextChunk.setDownloaded();
@@ -77,9 +106,11 @@ public class FlameServant extends Thread {
       while (true) { // write loop until success
         try {
           FlameWeaver.submitChunk(data, nextChunk.getOffset());
+          monitorProcessedChunk++;
           break;
         } catch (IOException ex) {
           System.err.println("Write error: chunk " + nextChunk.getOffset() + " retrying in 5 seconds...");
+          monitorThereWasAnError = true;
           try {
             Thread.sleep(5000);
           } catch (InterruptedException ex1) {}
@@ -92,11 +123,12 @@ public class FlameServant extends Thread {
 
     //System.out.println("Servant " + Thread.currentThread().getName() + " has completed their services");
     FlameWeaver.notifyServantDead();
+    finished = true;
 
     try {
       channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
-      Logger.getLogger(FlameServant.class.getName()).log(Level.SEVERE, null, ex);
+      InfoPrinter.printErrThreadSafe(ex.getLocalizedMessage());
     }
   }
 

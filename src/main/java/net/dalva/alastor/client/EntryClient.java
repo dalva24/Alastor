@@ -18,6 +18,7 @@
 package net.dalva.alastor.client;
 
 import java.util.concurrent.Callable;
+import net.dalva.alastor.Main;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
@@ -51,13 +52,13 @@ public class EntryClient implements Callable<Integer> {
 
   @Override
   public Integer call() throws Exception {
-    System.out.println("ALASTOR CLIENT"); //todo version info
+    System.out.println(Main.VERSION_FULL);
     System.out.println("Connecting to : " + address);
     System.out.println("Connections   : " + conns);
     System.out.println("Chunk Size    : " + chunkSizeInKB);
     if (notls) {
       System.out.print("TLS           : ");
-      System.out.println(Ansi.AUTO.string("@|bold,red,underline DISABLED |@"));
+      System.out.println(Ansi.AUTO.string("@|red DISABLED |@"));
     } else {
       System.out.println("TLS           : Enabled");
     }

@@ -30,12 +30,15 @@ import picocli.CommandLine.Spec;
  *
  * @author Dalva
  */
-@Command(name = "alastor", mixinStandardHelpOptions = true, version = "ALASTOR 0.1",
+@Command(name = "alastor", mixinStandardHelpOptions = true, version = Main.VERSION_FULL,
         description = {"Massively Concurrent File Transfer System", "Please choose a command, either to become server or download files."},
         subcommands = {
           EntryServer.class,
           EntryClient.class})
 public class Main implements Callable<Integer> {
+  
+  public static final String VERSION = "v0.2";
+  public static final String VERSION_FULL = "ALASTOR v0.2";
 
   @Spec
   CommandSpec spec;

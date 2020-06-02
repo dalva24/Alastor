@@ -46,7 +46,8 @@ import picocli.CommandLine;
 public class FlameWeaver {
 
   private static EntryClient params;
-  private static ExecutorService threadPool;
+  private static ExecutorService executor;
+  private static ArrayList<FlameServant> servants = new ArrayList();
   private static FileInfo fileInfo;
   
   private static final ArrayList<ChunkTracker> chunks = new ArrayList();
@@ -54,7 +55,6 @@ public class FlameWeaver {
   private static int chunkSize = 0; // in BYTES
   private static long chunksLength = 0;
   private static FileHandler fh;
-  private static int secondsWaited = 0;
   private static int lastSecondChunks = 0;
 
   /**
@@ -112,42 +112,70 @@ public class FlameWeaver {
 
     //And may the deluge begins.
     int threads = params.getConns();
-    threadPool = Executors.newFixedThreadPool(threads);
+    executor = Executors.newFixedThreadPool(threads);
     for (int i = 0; i < threads; i++) {
-      threadPool.submit(new FlameServant(params.isNotls(), params.getAddress()));
+      FlameServant servant = new FlameServant(params.isNotls(), params.getAddress());
+      servants.add(servant);
+      executor.submit(servant);
     }
 
     //Dont forget to shut down
-    threadPool.shutdown();
+    executor.shutdown();
     try {
-      while (!threadPool.awaitTermination(1, TimeUnit.SECONDS)) {
-        secondsWaited++;
-        System.out.println(getProgressInfo());
+      while (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+        printProgressInfo();
       }
       Thread.sleep(2000);
     } catch (InterruptedException ex) {
-      threadPool.shutdownNow();
+      executor.shutdownNow();
       Thread.currentThread().interrupt();
     }
     
-    System.out.println("");
-    System.out.println(CommandLine.Help.Ansi.AUTO.string("@|fg(39) Download successful. |@"));
+    printProgressInfo();
+    System.out.println(CommandLine.Help.Ansi.AUTO.string("@|cyan Download successful. |@"));
     System.out.println("");
 
   }
   
-  private static synchronized String getProgressInfo() {
-    int speed = lastSecondChunks * chunkSize / 1024; //last second speed, in kBps
+  private static synchronized void printProgressInfo() {
+    
+    InfoPrinter.updateLastSecond(lastSecondChunks);
     lastSecondChunks = 0;
     
-    int chunksGot = 0;
+    long chunksGot = 0;
     for (ChunkTracker chunk : chunks) {
       if (chunk.getStatus() == ChunkTracker.STATUS.written) {
         chunksGot++;
       }
     }
     
-    return String.format("%d s | %d kB/s | %d/%d chunks | %d active connections", secondsWaited, speed, chunksGot, chunksLength, activeServants);
+    InfoPrinter.printDlInfo(
+            params.isNotls(), 
+            params.getAddress(), 
+            fileInfo.getFileName(), 
+            fileInfo.getFileTimestamp(), 
+            fileInfo.getFileSize(), 
+            chunksGot, 
+            chunksLength, 
+            chunkSize, 
+            activeServants, 
+            params.getConns());
+    
+    //return String.format("%d s | %d kB/s | %d/%d chunks | %d active connections", secondsWaited, speed, chunksGot, chunksLength, activeServants);
+  }
+  
+  public static String getServantInfo() {
+    StringBuilder sb = new StringBuilder();
+    int servantNumber = 0;
+    for (FlameServant servant : servants) {
+      if (servantNumber %50 == 0) {
+        sb.append("\n  ");
+      }
+      servantNumber++;
+      sb.append(servant.getLoadingIndicator());
+    }
+    sb.append("\n");
+    return sb.toString();
   }
 
   /* ==============================================================================================================

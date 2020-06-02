@@ -121,8 +121,6 @@ TODOs:
   this is to improve the final download speeds, which usually slows down considerably.
 - Set adjustable timeout - or Set dynamic timeout based on remaining active connections?
 - Chunk timeout message newline
-- Show finished size instead of just the number of finished chunks when downloading
-- Show download ETA
 
 There are some additional ideas that came to mind, although priority to implement them is relatively low, such as:
 - Download pause and resuming capability, by saving downloaded chunk information as a metadata file besides the downloaded file

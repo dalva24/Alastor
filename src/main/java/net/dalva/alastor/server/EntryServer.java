@@ -22,6 +22,7 @@ import io.grpc.ServerBuilder;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import net.dalva.alastor.Main;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
@@ -46,7 +47,7 @@ public class EntryServer implements Callable<Integer> {
 
   @Override
   public Integer call() throws Exception {
-    System.out.println("ALASTOR SERVER"); //todo version info
+    System.out.println(Main.VERSION_FULL);
     System.out.println("Serving directory: " + serveDir);
     System.out.println("Configuration looks good, igniting Alastor...");
     

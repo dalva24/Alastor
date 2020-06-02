@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import net.dalva.alastor.Tools;
 import net.dalva.alastor.grpc.ErrorMsg;
 import net.dalva.alastor.grpc.FileInfo;
 
@@ -78,7 +79,14 @@ public class ServerFileHandler extends net.dalva.alastor.FileHandler {
    * @throws IOException
    */
   public synchronized static ServerFileHandler get(String fname, boolean readOnly) throws IOException {
-    int hashCode = new File(prefix + fname).hashCode();
+    fname = Tools.sanitizePath(fname);
+    File fileToOpen = new File(prefix + fname);
+    File prefixPath = new File(prefix);
+    if ( ! fileToOpen.getCanonicalPath().startsWith(prefixPath.getCanonicalPath())) {
+      //possible directory traversal attack
+      throw new IOException("Cannot open files outside serve dir");
+    }
+    int hashCode = fileToOpen.hashCode();
 
     //Check first to see if we have already opened the file before
     for (ServerFileHandler fh : OPENED_FILES) {
@@ -141,9 +149,9 @@ public class ServerFileHandler extends net.dalva.alastor.FileHandler {
     } else if (chunkOffset == totalChunks) {
       if (imperfectChunkExists) {
         //we're getting the last chunk which size is lower than chunkSize
-        int lastChunkSize = (int) file.length() % chunkSize;
+        double lastChunkSize = file.length() % chunkSize;
         //System.out.println("reading last chunk " + (chunkOffset+1) + " with size " + lastChunkSize);
-        return super.readOffset(chunkSize * chunkOffset, lastChunkSize);
+        return super.readOffset(chunkSize * chunkOffset, (int) lastChunkSize);
       } else {
         //continue as normal
         //System.out.println("reading last chunk " + (chunkOffset+1) + " out of " + totalChunks + " chunks");

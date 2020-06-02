@@ -31,4 +31,8 @@ public class Tools {
     return hasher.getValue();
   }
   
+  public static String sanitizePath(String path) {
+    return path.replaceAll("[~:|]|\\.\\.", "");
+  }
+  
 }
